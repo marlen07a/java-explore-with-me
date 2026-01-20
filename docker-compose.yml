@@ -1,14 +1,86 @@
 services:
-  stats-server:
-    ports:
-      - "9090:9090"
-
   stats-db:
     image: postgres:16.1
-
-  ewm-service:
+    container_name: stats-db
+    environment:
+      POSTGRES_DB: stats
+      POSTGRES_USER: stats
+      POSTGRES_PASSWORD: stats
     ports:
-      - "8080:8080"
+      - "6541:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-d", "stats", "-U", "stats" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - stats-db-data:/var/lib/postgresql/data
+    networks:
+      - app-net
+
+  stats-server:
+    build:
+      context: ./stats/stats-server
+      dockerfile: Dockerfile
+    image: explore-with-me/stats-server:latest
+    container_name: stats-server
+    depends_on:
+      stats-db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://stats-db:5432/stats
+      SPRING_DATASOURCE_USERNAME: stats
+      SPRING_DATASOURCE_PASSWORD: stats
+      SPRING_PROFILES_ACTIVE: ""
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    networks:
+      - app-net
 
   ewm-db:
     image: postgres:16.1
+    container_name: ewm-db
+    environment:
+      POSTGRES_DB: ewm
+      POSTGRES_USER: ewm
+      POSTGRES_PASSWORD: ewm
+    ports:
+      - "6542:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-d", "ewm", "-U", "ewm" ]
+    profiles:
+      - main
+    volumes:
+      - ewm-db-data:/var/lib/postgresql/data
+    networks:
+      - app-net
+
+  ewm-service:
+    build:
+      context: ./main-service
+      dockerfile: Dockerfile
+    image: explore-with-me/ewm-service:latest
+    container_name: ewm-service
+    depends_on:
+      ewm-db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://ewm-db:5432/ewm
+      SPRING_DATASOURCE_USERNAME: ewm
+      SPRING_DATASOURCE_PASSWORD: ewm
+      SPRING_PROFILES_ACTIVE: ""
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    profiles:
+      - main
+    networks:
+      - app-net
+
+volumes:
+  stats-db-data:
+  ewm-db-data:
+
+networks:
+  app-net:
