@@ -410,6 +410,9 @@ public class EventServiceImpl implements EventService {
                 .map(ev -> EVENT_BASE_PATH + ev.getId())
                 .toList();
         List<ViewStatsDto> stats = statsClient.getStats(start, end, uris, true);
+        if (stats == null) {
+            stats = List.of();
+        }
         return stats.stream()
                 .collect(Collectors.toMap(
                         v -> extractEventId(v.getUri()),

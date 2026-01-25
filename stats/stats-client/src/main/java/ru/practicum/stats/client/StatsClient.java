@@ -79,8 +79,8 @@ public class StatsClient {
                     new ParameterizedTypeReference<>() {
                     }
             );
-
-            return response.getBody();
+            List<ViewStatsDto> body = response.getBody();
+            return body != null ? body : List.of();
         } catch (Exception e) {
             log.error("Ошибка при получении статистики: {}", e.getMessage());
             return List.of();
