@@ -20,8 +20,8 @@ services:
 
   stats-server:
     build:
-      context: ./stats/stats-server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: stats/stats-server/Dockerfile
     image: explore-with-me/stats-server:latest
     container_name: stats-server
     depends_on:
@@ -58,8 +58,8 @@ services:
 
   ewm-service:
     build:
-      context: ./main-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: main-service/Dockerfile
     image: explore-with-me/ewm-service:latest
     container_name: ewm-service
     depends_on:
