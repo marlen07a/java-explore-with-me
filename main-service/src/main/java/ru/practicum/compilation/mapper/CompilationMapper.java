@@ -3,9 +3,6 @@ package ru.practicum.compilation.mapper;
 import ru.practicum.compilation.dto.CompilationDto;
 import ru.practicum.compilation.model.Compilation;
 import ru.practicum.event.mapper.EventMapper;
-import ru.practicum.request.model.RequestStatus;
-
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
