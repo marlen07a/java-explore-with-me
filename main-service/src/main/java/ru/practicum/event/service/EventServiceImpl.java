@@ -73,7 +73,7 @@ public class EventServiceImpl implements EventService {
 
         LocalDateTime now = LocalDateTime.now();
         if (dto.getEventDate().isBefore(now.plusHours(2))) {
-            throw new ConflictException("Event date must be at least 2 hours in future");
+            throw new BadRequestException("Event date must be at least 2 hours in future");
         }
 
         Event event = new Event();
@@ -305,7 +305,7 @@ public class EventServiceImpl implements EventService {
         }
         if (eventDate != null) {
             if (eventDate.isBefore(LocalDateTime.now().plusHours(2))) {
-                throw new ConflictException("Event date must be at least 2 hours in future");
+                throw new BadRequestException("Event date must be at least 2 hours in future");
             }
             event.setEventDate(eventDate);
         }
