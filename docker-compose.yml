@@ -49,8 +49,6 @@ services:
       - "6542:5432"
     healthcheck:
       test: [ "CMD", "pg_isready", "-d", "ewm", "-U", "ewm" ]
-    profiles:
-      - main
     volumes:
       - ewm-db-data:/var/lib/postgresql/data
     networks:
@@ -73,8 +71,6 @@ services:
     ports:
       - "8080:8080"
     restart: unless-stopped
-    profiles:
-      - main
     networks:
       - app-net
 
