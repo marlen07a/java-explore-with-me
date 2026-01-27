@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,7 +35,7 @@ public class PrivateRequestController {
         return requestService.createRequest(userId, eventId);
     }
 
-    @PostMapping("/{requestId}/cancel")
+    @PatchMapping("/{requestId}/cancel")
     public ParticipationRequestDto cancel(@PathVariable Long userId, @PathVariable Long requestId) {
         return requestService.cancel(userId, requestId);
     }
