@@ -414,6 +414,7 @@ public class EventServiceImpl implements EventService {
             stats = List.of();
         }
         return stats.stream()
+                .filter(v -> v.getHits() != null)
                 .collect(Collectors.toMap(
                         v -> extractEventId(v.getUri()),
                         ViewStatsDto::getHits,
@@ -424,10 +425,15 @@ public class EventServiceImpl implements EventService {
         if (events == null || events.isEmpty()) {
             return Map.of();
         }
-        Set<Long> ids = events.stream().map(Event::getId).collect(Collectors.toSet());
-        return requestRepository.findAll().stream()
-                .filter(r -> ids.contains(r.getEvent().getId()) && r.getStatus() == RequestStatus.CONFIRMED)
-                .collect(Collectors.groupingBy(r -> r.getEvent().getId(), Collectors.counting()));
+        List<Long> ids = events.stream().map(Event::getId).collect(Collectors.toList());
+        List<Object[]> results = requestRepository.countByEventIdsAndStatus(ids, RequestStatus.CONFIRMED);
+        Map<Long, Long> map = new java.util.HashMap<>();
+        for (Object[] row : results) {
+            Long eventId = (Long) row[0];
+            Long count = (Long) row[1];
+            map.put(eventId, count);
+        }
+        return map;
     }
 
     private long extractEventId(String uri) {
