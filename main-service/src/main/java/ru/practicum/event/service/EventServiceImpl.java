@@ -248,7 +248,7 @@ public class EventServiceImpl implements EventService {
             throw new BadRequestException("Start must be before end");
         }
         Specification<Event> spec = buildPublicSpec(text, categories, paid, start, rangeEnd);
-        List<Event> events = eventRepository.findAll(spec, pageable).getContent();
+        List<Event> events = new ArrayList<>(eventRepository.findAll(spec, pageable).getContent());
 
         Map<Long, Long> confirmed = confirmedCounts(events);
         Map<Long, Long> views = viewCounts(events);
