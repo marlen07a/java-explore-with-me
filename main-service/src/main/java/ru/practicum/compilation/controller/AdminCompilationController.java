@@ -4,9 +4,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -35,7 +35,7 @@ public class AdminCompilationController {
         compilationService.delete(compId);
     }
 
-    @PutMapping("/{compId}")
+    @PatchMapping("/{compId}")
     public CompilationDto update(@PathVariable Long compId, @Valid @RequestBody UpdateCompilationRequest dto) {
         return compilationService.update(compId, dto);
     }

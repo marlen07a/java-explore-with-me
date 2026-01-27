@@ -63,6 +63,8 @@ services:
     depends_on:
       ewm-db:
         condition: service_healthy
+      stats-server:
+        condition: service_started
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://ewm-db:5432/ewm
       SPRING_DATASOURCE_USERNAME: ewm

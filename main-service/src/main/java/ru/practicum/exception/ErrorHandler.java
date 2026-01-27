@@ -2,6 +2,7 @@ package ru.practicum.exception;
 
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -59,6 +60,11 @@ public class ErrorHandler {
                 .map(v -> v.getMessage())
                 .collect(Collectors.joining("; "));
         return build(HttpStatus.BAD_REQUEST, "Incorrectly made request.", message);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        return build(HttpStatus.CONFLICT, "Integrity constraint has been violated.", ex.getMessage());
     }
 
     @ExceptionHandler(Throwable.class)
