@@ -75,19 +75,7 @@ public class EventServiceImpl implements EventService {
             throw new BadRequestException("Event date must be at least 2 hours in future");
         }
 
-        Event event = new Event();
-        event.setAnnotation(dto.getAnnotation());
-        event.setCategory(category);
-        event.setDescription(dto.getDescription());
-        event.setEventDate(dto.getEventDate());
-        event.setLocation(EventMapper.toLocation(dto.getLocation()));
-        event.setPaid(Boolean.TRUE.equals(dto.getPaid()));
-        event.setParticipantLimit(dto.getParticipantLimit() == null ? 0 : dto.getParticipantLimit());
-        event.setRequestModeration(dto.getRequestModeration() == null || dto.getRequestModeration());
-        event.setTitle(dto.getTitle());
-        event.setCreatedOn(now);
-        event.setInitiator(initiator);
-        event.setState(EventState.PENDING);
+        Event event = EventMapper.toEntity(dto, category, initiator, now);
 
         Event saved = eventRepository.save(event);
         return EventMapper.toFull(saved, 0, 0);

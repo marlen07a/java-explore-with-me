@@ -1,15 +1,38 @@
 package ru.practicum.event.mapper;
 
+import lombok.experimental.UtilityClass;
 import ru.practicum.category.mapper.CategoryMapper;
+import ru.practicum.category.model.Category;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.dto.LocationDto;
+import ru.practicum.event.dto.NewEventDto;
 import ru.practicum.event.model.Event;
+import ru.practicum.event.model.EventState;
 import ru.practicum.event.model.Location;
 import ru.practicum.user.mapper.UserMapper;
+import ru.practicum.user.model.User;
 
-public final class EventMapper {
-    private EventMapper() {
+import java.time.LocalDateTime;
+
+@UtilityClass
+public class EventMapper {
+
+    public static Event toEntity(NewEventDto dto, Category category, User initiator, LocalDateTime createdOn) {
+        Event event = new Event();
+        event.setAnnotation(dto.getAnnotation());
+        event.setCategory(category);
+        event.setDescription(dto.getDescription());
+        event.setEventDate(dto.getEventDate());
+        event.setLocation(toLocation(dto.getLocation()));
+        event.setPaid(Boolean.TRUE.equals(dto.getPaid()));
+        event.setParticipantLimit(dto.getParticipantLimit() == null ? 0 : dto.getParticipantLimit());
+        event.setRequestModeration(dto.getRequestModeration() == null || dto.getRequestModeration());
+        event.setTitle(dto.getTitle());
+        event.setCreatedOn(createdOn);
+        event.setInitiator(initiator);
+        event.setState(EventState.PENDING);
+        return event;
     }
 
     public static EventShortDto toShort(Event event, long confirmed, long views) {
