@@ -1,0 +1,1387 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "Feature: Rating Events",
+		"description": "Tests for like/dislike functionality, event ratings, user ratings, and sorting by rating",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Setup: Create test data",
+			"item": [
+				{
+					"name": "Create User 1 (Initiator)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test('Response has id and name', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData.name).to.eql('Initiator User');",
+									"    pm.expect(jsonData.email).to.eql('initiator@rating.test');",
+									"});",
+									"pm.collectionVariables.set('userId1', pm.response.json().id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\": \"Initiator User\", \"email\": \"initiator@rating.test\"}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "users"]
+						}
+					}
+				},
+				{
+					"name": "Create User 2 (Participant A)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test('Response has correct data', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData.name).to.eql('Participant A');",
+									"});",
+									"pm.collectionVariables.set('userId2', pm.response.json().id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\": \"Participant A\", \"email\": \"participantA@rating.test\"}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "users"]
+						}
+					}
+				},
+				{
+					"name": "Create User 3 (Participant B)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.collectionVariables.set('userId3', pm.response.json().id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\": \"Participant B\", \"email\": \"participantB@rating.test\"}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "users"]
+						}
+					}
+				},
+				{
+					"name": "Create User 4 (Non-participant)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.collectionVariables.set('userId4', pm.response.json().id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\": \"NonParticipant\", \"email\": \"nonpart@rating.test\"}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "users"]
+						}
+					}
+				},
+				{
+					"name": "Create Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.collectionVariables.set('categoryId', pm.response.json().id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\": \"Rating Test Category\"}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/categories",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "categories"]
+						}
+					}
+				},
+				{
+					"name": "Create Event 1",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var date = new Date();",
+									"date.setFullYear(date.getFullYear() + 1);",
+									"var formatted = date.toISOString().replace('T', ' ').substring(0, 19);",
+									"pm.collectionVariables.set('eventDate', formatted);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test('Event created with PENDING state and rating 0', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.state).to.eql('PENDING');",
+									"    pm.expect(jsonData.rating).to.eql(0);",
+									"});",
+									"pm.collectionVariables.set('eventId1', pm.response.json().id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"annotation\": \"Annotation for the first test event must be at least twenty chars\", \"category\": {{categoryId}}, \"description\": \"Description for the first test event must be at least twenty characters long\", \"eventDate\": \"{{eventDate}}\", \"location\": {\"lat\": 55.754167, \"lon\": 37.62}, \"paid\": false, \"participantLimit\": 0, \"requestModeration\": false, \"title\": \"Event One for Rating\"}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId1}}/events",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId1}}", "events"]
+						}
+					}
+				},
+				{
+					"name": "Create Event 2 (for sorting test)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var date = new Date();",
+									"date.setFullYear(date.getFullYear() + 1);",
+									"date.setMonth(date.getMonth() + 1);",
+									"var formatted = date.toISOString().replace('T', ' ').substring(0, 19);",
+									"pm.collectionVariables.set('eventDate2', formatted);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.collectionVariables.set('eventId2', pm.response.json().id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"annotation\": \"Annotation for the second test event must be at least twenty chars\", \"category\": {{categoryId}}, \"description\": \"Description for the second test event must be at least twenty characters long\", \"eventDate\": \"{{eventDate2}}\", \"location\": {\"lat\": 55.76, \"lon\": 37.63}, \"paid\": false, \"participantLimit\": 0, \"requestModeration\": false, \"title\": \"Event Two for Rating\"}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId1}}/events",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId1}}", "events"]
+						}
+					}
+				},
+				{
+					"name": "Publish Event 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Event 1 is PUBLISHED', function () {",
+									"    pm.expect(pm.response.json().state).to.eql('PUBLISHED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"stateAction\": \"PUBLISH_EVENT\"}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/events/{{eventId1}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "events", "{{eventId1}}"]
+						}
+					}
+				},
+				{
+					"name": "Publish Event 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Event 2 is PUBLISHED', function () {",
+									"    pm.expect(pm.response.json().state).to.eql('PUBLISHED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"stateAction\": \"PUBLISH_EVENT\"}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/events/{{eventId2}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "events", "{{eventId2}}"]
+						}
+					}
+				},
+				{
+					"name": "User 2 requests Event 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test('Request is CONFIRMED (no moderation)', function () {",
+									"    pm.expect(pm.response.json().status).to.eql('CONFIRMED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId2}}/requests?eventId={{eventId1}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId2}}", "requests"],
+							"query": [{"key": "eventId", "value": "{{eventId1}}"}]
+						}
+					}
+				},
+				{
+					"name": "User 3 requests Event 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test('Request is CONFIRMED', function () {",
+									"    pm.expect(pm.response.json().status).to.eql('CONFIRMED');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId3}}/requests?eventId={{eventId1}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId3}}", "requests"],
+							"query": [{"key": "eventId", "value": "{{eventId1}}"}]
+						}
+					}
+				},
+				{
+					"name": "User 2 requests Event 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId2}}/requests?eventId={{eventId2}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId2}}", "requests"],
+							"query": [{"key": "eventId", "value": "{{eventId2}}"}]
+						}
+					}
+				},
+				{
+					"name": "User 3 requests Event 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId3}}/requests?eventId={{eventId2}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId3}}", "requests"],
+							"query": [{"key": "eventId", "value": "{{eventId2}}"}]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Validation: Rating restrictions",
+			"item": [
+				{
+					"name": "Initiator cannot like own event - 409",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 409 - initiator cannot rate own event', function () {",
+									"    pm.response.to.have.status(409);",
+									"});",
+									"pm.test('Error message mentions initiator', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.include('initiator');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId1}}/events/{{eventId1}}/like",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId1}}", "events", "{{eventId1}}", "like"]
+						}
+					}
+				},
+				{
+					"name": "Initiator cannot dislike own event - 409",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 409 - initiator cannot dislike own event', function () {",
+									"    pm.response.to.have.status(409);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId1}}/events/{{eventId1}}/dislike",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId1}}", "events", "{{eventId1}}", "dislike"]
+						}
+					}
+				},
+				{
+					"name": "Non-participant cannot like - 409",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 409 - non-participant cannot rate', function () {",
+									"    pm.response.to.have.status(409);",
+									"});",
+									"pm.test('Error message mentions participant', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.include('participant');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId4}}/events/{{eventId1}}/like",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId4}}", "events", "{{eventId1}}", "like"]
+						}
+					}
+				},
+				{
+					"name": "Non-participant cannot dislike - 409",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 409 - non-participant cannot rate', function () {",
+									"    pm.response.to.have.status(409);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId4}}/events/{{eventId1}}/dislike",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId4}}", "events", "{{eventId1}}", "dislike"]
+						}
+					}
+				},
+				{
+					"name": "Like non-existent event - 404",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId2}}/events/99999/like",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId2}}", "events", "99999", "like"]
+						}
+					}
+				},
+				{
+					"name": "Dislike non-existent event - 404",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId2}}/events/99999/dislike",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId2}}", "events", "99999", "dislike"]
+						}
+					}
+				},
+				{
+					"name": "Like with non-existent user - 404",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/99999/events/{{eventId1}}/like",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "99999", "events", "{{eventId1}}", "like"]
+						}
+					}
+				},
+				{
+					"name": "Remove non-existent rating - 404",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404 - no rating to remove', function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId2}}/events/{{eventId1}}/rating",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId2}}", "events", "{{eventId1}}", "rating"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Like functionality",
+			"item": [
+				{
+					"name": "User 2 likes Event 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 - like added', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId2}}/events/{{eventId1}}/like",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId2}}", "events", "{{eventId1}}", "like"]
+						}
+					}
+				},
+				{
+					"name": "Get Event 1 - rating should be 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Rating is 1 after one like', function () {",
+									"    pm.expect(pm.response.json().rating).to.eql(1);",
+									"});",
+									"pm.test('Response contains rating field', function () {",
+									"    pm.expect(pm.response.json()).to.have.property('rating');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events/{{eventId1}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["events", "{{eventId1}}"]
+						}
+					}
+				},
+				{
+					"name": "User 3 likes Event 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 - second like added', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId3}}/events/{{eventId1}}/like",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId3}}", "events", "{{eventId1}}", "like"]
+						}
+					}
+				},
+				{
+					"name": "Get Event 1 - rating should be 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Rating is 2 after two likes', function () {",
+									"    pm.expect(pm.response.json().rating).to.eql(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events/{{eventId1}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["events", "{{eventId1}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Dislike functionality",
+			"item": [
+				{
+					"name": "User 3 changes like to dislike on Event 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 - vote changed', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId3}}/events/{{eventId1}}/dislike",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId3}}", "events", "{{eventId1}}", "dislike"]
+						}
+					}
+				},
+				{
+					"name": "Get Event 1 - rating should be 0 (1 like - 1 dislike)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Rating is 0 (1 like - 1 dislike)', function () {",
+									"    pm.expect(pm.response.json().rating).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events/{{eventId1}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["events", "{{eventId1}}"]
+						}
+					}
+				},
+				{
+					"name": "User 2 dislikes Event 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId2}}/events/{{eventId2}}/dislike",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId2}}", "events", "{{eventId2}}", "dislike"]
+						}
+					}
+				},
+				{
+					"name": "Get Event 2 - rating should be -1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Rating is -1 after one dislike', function () {",
+									"    pm.expect(pm.response.json().rating).to.eql(-1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events/{{eventId2}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["events", "{{eventId2}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Remove rating",
+			"item": [
+				{
+					"name": "User 3 removes dislike from Event 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 204 - rating removed', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId3}}/events/{{eventId1}}/rating",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId3}}", "events", "{{eventId1}}", "rating"]
+						}
+					}
+				},
+				{
+					"name": "Get Event 1 - rating should be 1 (only User 2 like remains)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Rating is 1 after removing one vote', function () {",
+									"    pm.expect(pm.response.json().rating).to.eql(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events/{{eventId1}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["events", "{{eventId1}}"]
+						}
+					}
+				},
+				{
+					"name": "Remove already removed rating - 404",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404 - rating already removed', function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId3}}/events/{{eventId1}}/rating",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId3}}", "events", "{{eventId1}}", "rating"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "6. Re-rate: change vote",
+			"item": [
+				{
+					"name": "User 3 likes Event 1 again (re-add after removal)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 - re-rate success', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId3}}/events/{{eventId1}}/like",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId3}}", "events", "{{eventId1}}", "like"]
+						}
+					}
+				},
+				{
+					"name": "Get Event 1 - rating should be 2 (both users liked)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Rating is 2 after re-adding like', function () {",
+									"    pm.expect(pm.response.json().rating).to.eql(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events/{{eventId1}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["events", "{{eventId1}}"]
+						}
+					}
+				},
+				{
+					"name": "User 3 changes like to dislike (idempotent re-vote)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 - vote changed to dislike', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId3}}/events/{{eventId1}}/dislike",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId3}}", "events", "{{eventId1}}", "dislike"]
+						}
+					}
+				},
+				{
+					"name": "Get Event 1 - rating should be 0 again",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Rating is 0 after changing to dislike', function () {",
+									"    pm.expect(pm.response.json().rating).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events/{{eventId1}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["events", "{{eventId1}}"]
+						}
+					}
+				},
+				{
+					"name": "User 3 re-likes Event 1 (restore for sorting test)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId3}}/events/{{eventId1}}/like",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId3}}", "events", "{{eventId1}}", "like"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "7. Rating in different views",
+			"item": [
+				{
+					"name": "Get Event 1 (public) - has rating field",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Full event has rating field equal to 2', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('rating');",
+									"    pm.expect(jsonData.rating).to.eql(2);",
+									"});",
+									"pm.test('Full event has all required fields', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('annotation');",
+									"    pm.expect(jsonData).to.have.property('category');",
+									"    pm.expect(jsonData).to.have.property('confirmedRequests');",
+									"    pm.expect(jsonData).to.have.property('views');",
+									"    pm.expect(jsonData).to.have.property('rating');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events/{{eventId1}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["events", "{{eventId1}}"]
+						}
+					}
+				},
+				{
+					"name": "Get user events (private) - rating in short dto",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Events list contains rating field', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    jsonData.forEach(function(event) {",
+									"        pm.expect(event).to.have.property('rating');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId1}}/events",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId1}}", "events"]
+						}
+					}
+				},
+				{
+					"name": "Get user's own event (private full) - rating in full dto",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Private full event has rating', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('rating');",
+									"    pm.expect(jsonData.rating).to.eql(2);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId1}}/events/{{eventId1}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId1}}", "events", "{{eventId1}}"]
+						}
+					}
+				},
+				{
+					"name": "Admin search - rating in full dto",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Admin search results contain rating', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    pm.expect(jsonData.length).to.be.greaterThan(0);",
+									"    jsonData.forEach(function(event) {",
+									"        pm.expect(event).to.have.property('rating');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/events",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "events"]
+						}
+					}
+				},
+				{
+					"name": "Public search - rating in short dto",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Public search results contain rating', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    jsonData.forEach(function(event) {",
+									"        pm.expect(event).to.have.property('rating');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events",
+							"host": ["{{baseUrl}}"],
+							"path": ["events"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "8. Sort by rating",
+			"item": [
+				{
+					"name": "Sort events by RATING - Event 1 first (rating=2), Event 2 last (rating=-1)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Returns array of events', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    pm.expect(jsonData.length).to.be.greaterThan(0);",
+									"});",
+									"pm.test('Events sorted by rating descending', function () {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.length >= 2) {",
+									"        pm.expect(jsonData[0].rating).to.be.at.least(jsonData[1].rating);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events?sort=RATING",
+							"host": ["{{baseUrl}}"],
+							"path": ["events"],
+							"query": [{"key": "sort", "value": "RATING"}]
+						}
+					}
+				},
+				{
+					"name": "Sort by EVENT_DATE (default) works alongside rating",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Events sorted by date, each has rating', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    jsonData.forEach(function(event) {",
+									"        pm.expect(event).to.have.property('rating');",
+									"        pm.expect(event).to.have.property('eventDate');",
+									"    });",
+									"    if (jsonData.length >= 2) {",
+									"        pm.expect(new Date(jsonData[0].eventDate)).to.be.at.most(new Date(jsonData[1].eventDate));",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events?sort=EVENT_DATE",
+							"host": ["{{baseUrl}}"],
+							"path": ["events"],
+							"query": [{"key": "sort", "value": "EVENT_DATE"}]
+						}
+					}
+				},
+				{
+					"name": "Sort by VIEWS still works",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Events have both views and rating', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    jsonData.forEach(function(event) {",
+									"        pm.expect(event).to.have.property('rating');",
+									"        pm.expect(event).to.have.property('views');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events?sort=VIEWS",
+							"host": ["{{baseUrl}}"],
+							"path": ["events"],
+							"query": [{"key": "sort", "value": "VIEWS"}]
+						}
+					}
+				}
+			]
+		}
+	]
+}

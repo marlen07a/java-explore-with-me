@@ -30,4 +30,12 @@ public final class UserMapper {
                 .name(user.getName())
                 .build();
     }
+
+    public static UserShortDto toShort(User user, long rating) {
+        return UserShortDto.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .rating(rating)
+                .build();
+    }
 }
