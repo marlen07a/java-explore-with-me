@@ -20,8 +20,8 @@ services:
 
   stats-server:
     build:
-      context: ./stats/stats-server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: stats/stats-server/Dockerfile
     image: explore-with-me/stats-server:latest
     container_name: stats-server
     depends_on:
@@ -49,8 +49,6 @@ services:
       - "6542:5432"
     healthcheck:
       test: [ "CMD", "pg_isready", "-d", "ewm", "-U", "ewm" ]
-    profiles:
-      - main
     volumes:
       - ewm-db-data:/var/lib/postgresql/data
     networks:
@@ -58,23 +56,24 @@ services:
 
   ewm-service:
     build:
-      context: ./main-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: main-service/Dockerfile
     image: explore-with-me/ewm-service:latest
     container_name: ewm-service
     depends_on:
       ewm-db:
         condition: service_healthy
+      stats-server:
+        condition: service_started
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://ewm-db:5432/ewm
       SPRING_DATASOURCE_USERNAME: ewm
       SPRING_DATASOURCE_PASSWORD: ewm
       SPRING_PROFILES_ACTIVE: ""
+      STATS_SERVER_URL: http://stats-server:9090
     ports:
       - "8080:8080"
     restart: unless-stopped
-    profiles:
-      - main
     networks:
       - app-net
 

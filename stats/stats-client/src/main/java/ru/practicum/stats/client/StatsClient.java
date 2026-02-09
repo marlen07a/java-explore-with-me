@@ -11,11 +11,10 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
+import org.springframework.web.util.UriComponentsBuilder;
 import ru.practicum.stats.dto.EndpointHitDto;
 import ru.practicum.stats.dto.ViewStatsDto;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -27,7 +26,7 @@ public class StatsClient {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private final RestTemplate restTemplate;
 
-    public StatsClient(@Value("${stats-server.url:http://localhost:9090}") String serverUrl,
+    public StatsClient(@Value("${stats.server.url:http://localhost:9090}") String serverUrl,
                        RestTemplateBuilder builder) {
         this.restTemplate = builder
                 .uriTemplateHandler(new DefaultUriBuilderFactory(serverUrl))
@@ -56,31 +55,33 @@ public class StatsClient {
                                        List<String> uris, Boolean unique) {
         log.info("Запрос статистики: start={}, end={}, uris={}, unique={}", start, end, uris, unique);
 
-        String encodedStart = encodeDateTime(start);
-        String encodedEnd = encodeDateTime(end);
+        String startStr = start.format(FORMATTER);
+        String endStr = end.format(FORMATTER);
 
-        StringBuilder uriBuilder = new StringBuilder("/stats?start=" + encodedStart + "&end=" + encodedEnd);
+        UriComponentsBuilder builder = UriComponentsBuilder.fromPath("/stats")
+                .queryParam("start", startStr)
+                .queryParam("end", endStr);
 
         if (uris != null && !uris.isEmpty()) {
             for (String uri : uris) {
-                uriBuilder.append("&uris=").append(uri);
+                builder.queryParam("uris", uri);
             }
         }
 
         if (unique != null) {
-            uriBuilder.append("&unique=").append(unique);
+            builder.queryParam("unique", unique);
         }
 
         try {
             ResponseEntity<List<ViewStatsDto>> response = restTemplate.exchange(
-                    uriBuilder.toString(),
+                    builder.build().toUriString(),
                     HttpMethod.GET,
                     null,
                     new ParameterizedTypeReference<>() {
                     }
             );
-
-            return response.getBody();
+            List<ViewStatsDto> body = response.getBody();
+            return body != null ? body : List.of();
         } catch (Exception e) {
             log.error("Ошибка при получении статистики: {}", e.getMessage());
             return List.of();
@@ -89,10 +90,5 @@ public class StatsClient {
 
     public List<ViewStatsDto> getStats(LocalDateTime start, LocalDateTime end) {
         return getStats(start, end, null, false);
-    }
-
-    private String encodeDateTime(LocalDateTime dateTime) {
-        String formatted = dateTime.format(FORMATTER);
-        return URLEncoder.encode(formatted, StandardCharsets.UTF_8);
     }
 }
